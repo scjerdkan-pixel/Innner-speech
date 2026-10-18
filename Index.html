@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pause Emotion Co-pilot · Inner Speech Receptor (Prototype)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#081022; --side:#0a1428; --panel:#0e1a33; --panel2:#0b1529; --card:#101e3a;
+  --line:#1d2c4c; --text:#e8edf7; --muted:#8e9cb8; --accent:#5b8cff; --pink:#f472a0;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:radial-gradient(1200px 600px at 70% -10%,#12204000,#0000),var(--bg);color:var(--text);font:15px/1.5 Inter,"Noto Sans Thai",system-ui,sans-serif}
+h2,h3,h4,p{margin:0}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.muted{color:var(--muted)}
+.num{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* Top bar */
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:14px 28px;border-bottom:1px solid var(--line);background:#091327}
+.brand{display:flex;align-items:center;gap:14px}
+.brand .logo{color:#9ec0ff}
+.brand .logo svg{width:34px;height:34px}
+.brand h1{margin:0;font-size:21px;font-weight:600}
+.brand .with{border-left:1px solid var(--line);padding-left:18px;margin-left:6px;color:var(--muted)}
+.brand .with b{color:#c9d6f2;font-weight:500}
+.top-right{display:flex;align-items:center;gap:22px}
+.clock{text-align:right;font-size:13px;color:var(--muted);line-height:1.4;border-right:1px solid var(--line);padding-right:22px}
+.online{display:flex;align-items:center;gap:8px;font-size:14px}
+.online .dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e}
+.online.off .dot{background:#64748b;box-shadow:none}
+.avatar{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:#16274a;border:1px solid #233a66;font-weight:600;font-size:18px}
+
+/* Layout */
+.layout{display:grid;grid-template-columns:244px minmax(0,1fr);min-height:calc(100vh - 73px)}
+.sidebar{display:flex;flex-direction:column;gap:6px;padding:22px 14px;border-right:1px solid var(--line);background:var(--side)}
+.sidebar a{display:flex;align-items:center;gap:14px;color:#b7c3dc;text-decoration:none;padding:13px 16px;border-radius:12px;transition:.15s}
+.sidebar a svg{color:#8fb0ff}
+.sidebar a:hover{background:#111f3b;color:#fff}
+.sidebar a.active{background:linear-gradient(90deg,#17305c,#132648);color:#fff;box-shadow:inset 0 0 0 1px #21407a}
+.sidebar a.active svg{color:#7fb0ff}
+.side-foot{margin-top:auto;padding:16px;color:#b7c3dc;font-size:15px;line-height:1.55}
+.side-foot svg{color:#8fb0ff;margin-bottom:6px}
+.main{padding:16px 20px 32px;display:flex;flex-direction:column;gap:18px}
+
+/* Panels & cards */
+.panel{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.card{background:linear-gradient(180deg,#0f1c38,#0c172e);border:1px solid var(--line);border-radius:16px;padding:20px}
+.isr-head{display:flex;align-items:center;gap:18px;margin-bottom:18px}
+.isr-icon{width:66px;height:66px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(135deg,#1b2f5c,#12224a);color:#cfe0ff;box-shadow:0 0 24px rgba(91,140,255,.25)}
+.isr-icon svg{width:40px;height:40px}
+.isr-head h2{font-size:26px;font-weight:600}
+.isr-head p{color:var(--muted)}
+.label{display:flex;align-items:center;gap:12px;font-size:17px;font-weight:500;margin-bottom:14px}
+.label svg{color:#9ec0ff}
+.top3{display:grid;grid-template-columns:1.95fr 1fr;gap:16px;margin-bottom:12px}
+.sr{display:grid;grid-template-columns:1fr 210px}
+.sr>div+div{border-left:1px solid var(--line);padding-left:30px;margin-left:30px}
+.quote-box{position:relative;background:#16264a;border-radius:16px;padding:20px 22px;font-size:19px;font-weight:500;margin-left:6px}
+.quote-box::before{content:"";position:absolute;left:-8px;top:50%;margin-top:-8px;border:8px solid transparent;border-right-color:#16264a;border-left:0}
+.story-meta{margin-top:10px;font-size:13px;color:var(--muted)}
+.round-num{font-size:44px;font-weight:500;line-height:1.1}
+.emo-main{font-size:28px;font-weight:500;color:var(--c)}
+.emo-main .dash{opacity:.8;margin:0 8px}
+.emo-sub{color:var(--c);margin-top:6px;font-size:15px}
+
+/* Spectrum */
+.spec-title{display:flex;align-items:baseline;gap:12px}
+.spec-title small{color:var(--muted);font-size:14px;font-weight:400}
+.spec-track{position:relative;height:26px;border-radius:999px;margin:26px 0 12px}
+.spec-thumb{position:absolute;top:50%;width:28px;height:28px;border-radius:50%;transform:translate(-50%,-50%);background:#ffe4ec;box-shadow:0 0 0 4px rgba(255,255,255,.12),0 0 18px rgba(255,180,200,.8);transition:left .5s}
+.spec-ends{display:flex;justify-content:space-between;font-size:14px}
+.spec-ends span{color:var(--l)}
+.spec-ends small{display:block;color:var(--muted)}
+.spec-ends span:last-child{text-align:right}
+
+/* Emotion history */
+.eh{display:flex;align-items:flex-start;justify-content:space-around;gap:6px;padding:4px 10px 6px;overflow-x:auto}
+.eh-item{text-align:center;min-width:96px;font-size:15px}
+.eh-dot{width:24px;height:24px;border-radius:50%;margin:4px auto 10px;background:var(--c);box-shadow:0 0 14px color-mix(in srgb,var(--c) 55%,transparent)}
+.eh-item.cur .eh-dot{outline:2px solid #ffffff55;outline-offset:3px}
+.eh-item .muted{line-height:1.4}
+.eh-arrow{color:#5b6b8c;align-self:center;font-size:22px;margin-top:-8px}
+
+/* Pause Sound Monitor */
+.mon-head{display:flex;align-items:center;gap:16px;margin-bottom:10px}
+.mon-head svg{width:34px;height:34px;color:#cfe0ff}
+.mon-head h3{font-size:18px;font-weight:600}
+.mon-head p{color:#b7c3dc;font-size:14px}
+.mon-body{display:grid;grid-template-columns:56px 1fr;gap:16px;align-items:center}
+.mic-btn{width:54px;height:54px;border-radius:50%;border:1px solid #2a3c62;background:#18284a;color:#b7c8ea;cursor:pointer;display:grid;place-items:center;transition:.2s}
+.mic-btn:hover{background:#1f3360}
+.mic-btn.on{background:#4a1630;border-color:#f472a0;color:#fff;box-shadow:0 0 0 6px rgba(244,114,160,.1),0 0 22px rgba(244,114,160,.45)}
+.wave-wrap{position:relative;padding-top:44px}
+#wave{display:block;width:100%;height:110px}
+.mon-tip{position:absolute;top:0;right:0;padding:6px 18px;border-radius:999px;background:#18284a;border:1px solid #2f4677;font-size:14px;white-space:nowrap}
+.mon-tip.speaking{border-color:#6d8cff;color:#dbe6ff}
+.meter{position:relative;height:6px;border-radius:999px;margin:16px 0 10px 72px;background:linear-gradient(90deg,#2563eb,#7c3aed 55%,#f43f5e)}
+.meter-dot{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:#fff;transform:translate(-50%,-50%);box-shadow:0 0 10px #fff;transition:left .08s}
+.meter-labels{display:flex;justify-content:space-between;margin-left:72px;color:#b7c3dc;font-size:14px}
+.interim{margin:10px 0 0 72px;min-height:20px;font-size:13px;color:var(--muted);font-style:italic}
+
+/* Generic */
+.title{font-size:26px;font-weight:600}
+.subtitle{color:var(--muted);margin-top:4px}
+.card-head{margin-bottom:16px}
+.card-head h3{font-size:17px;font-weight:600}
+.card-head p{color:var(--muted);font-size:13px;margin-top:2px}
+.tag{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12.5px;color:var(--c);background:color-mix(in srgb,var(--c) 18%,transparent)}
+.chip{font-size:12px;color:var(--muted);padding:3px 10px;border-radius:999px;background:#16223a}
+.btn{font:inherit;font-size:14px;color:var(--text);background:#1a2b4d;border:1px solid #23375e;padding:9px 18px;border-radius:999px;cursor:pointer}
+.btn:hover{background:#213762}
+.btn.ghost{background:transparent;border-color:var(--line);color:#a9c4ff}
+.btn.subtle{background:transparent;border-color:#3a2533;color:#f0a8b8}
+.actions{display:flex;gap:12px;flex-wrap:wrap}
+.form{display:flex;flex-direction:column;gap:18px;max-width:520px}
+.form label{display:flex;flex-direction:column;gap:6px}
+.form label.check{flex-direction:row;align-items:center;gap:10px}
+.form small{color:var(--muted)}
+input[type=text],select{font:inherit;color:var(--text);background:#0b1324;border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.test-input{display:flex;gap:10px}
+.test-input input{flex:1}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{padding:12px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{color:var(--muted);font-weight:500;font-size:13px}
+.sep{color:#334155;margin:0 6px}
+.empty{color:var(--muted);padding:24px;text-align:center;border:1px dashed var(--line);border-radius:12px}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.path{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13px;margin:10px 0}
+.path .step{color:var(--c);display:inline-flex;align-items:center;gap:5px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--c);display:inline-block}
+.meta{color:var(--muted);font-size:13.5px;display:flex;gap:18px;flex-wrap:wrap;margin:6px 0 12px}
+.row-top{display:flex;justify-content:space-between;align-items:center}
+.sbar{display:grid;grid-template-columns:110px 1fr 44px;align-items:center;gap:12px;padding:5px 0;font-size:14px}
+.track{height:8px;border-radius:4px;background:#1a2640;overflow:hidden}
+.fill{height:100%;border-radius:4px}
+.pct{text-align:right;color:var(--muted);font-size:13px}
+.chart{width:100%;height:auto}
+.chart .axis{stroke:#24324f}
+.chart .grid{stroke:#1c2a44;stroke-dasharray:4 4}
+.chart text{fill:var(--muted);font-size:12px}
+.chart .val{fill:var(--text);font-size:11px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.stat .v{font-size:24px;font-weight:500}
+.stat .k{color:var(--muted);font-size:13px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.note{color:var(--muted);font-size:13px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a2b4d;border:1px solid #23375e;padding:10px 18px;border-radius:10px;font-size:14px;z-index:10;max-width:90vw}
+
+@media (max-width:1100px){.top3{grid-template-columns:1fr}}
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}
+  .side-foot,.brand .with,.clock{display:none}
+  .sr,.stats{grid-template-columns:1fr}
+  .sr>div+div{border-left:0;padding-left:0;margin-left:0;border-top:1px solid var(--line);padding-top:16px;margin-top:16px}
+  .meter,.meter-labels,.interim{margin-left:0}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo"><svg class="i" viewBox="0 0 24 24"><path d="M2 12h3l2-6 3 12 3-9 2 5 2-2h5"/></svg></span>
+    <h1>Pause Emotion Co-pilot</h1>
+    <span class="with">with <b>Inner Speech Receptor</b></span>
+  </div>
+  <div class="top-right">
+    <div class="clock"><div id="clock-date"></div><div id="clock-time"></div></div>
+    <div class="online" id="online"><span class="dot"></span><span id="online-text">Online</span></div>
+    <div class="avatar" id="avatar">J</div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="nav">
+    <a href="#/home" data-route="home"><svg class="i" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</a>
+    <a href="#/spectrum" data-route="spectrum"><svg class="i" viewBox="0 0 24 24"><path d="M2 12h3l2-6 3 12 3-9 2 5 2-2h5"/></svg>Emotion Spectrum</a>
+    <a href="#/story" data-route="story"><svg class="i" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/></svg>Story</a>
+    <a href="#/round" data-route="round"><svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg>Round</a>
+    <a href="#/voice" data-route="voice"><svg class="i" viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg>Voice Graph</a>
+    <a href="#/history" data-route="history"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>History</a>
+    <a href="#/settings" data-route="settings"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Settings</a>
+    <div class="side-foot">
+      <svg class="i" viewBox="0 0 24 24"><path d="M5 19c0-8 6-14 15-14 0 9-6 15-14 15"/><path d="M5 19l8-8"/></svg>
+      <div>It's not about<br>being perfect,<br>it's about seeing<br>yourself more clearly.</div>
+    </div>
+  </nav>
+  <main id="view" class="main"></main>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script>
+'use strict';
+
+/* ================= 1. UTILS ================= */
+const THAI = /[\u0E00-\u0E7F]/;
+const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\ CODEBLOCK0 ');
+const normalize = (s = '') => s.toLowerCase().replace(/[’‘]/g, "'").replace(/\s+/g, ' ').trim();
+function containsTerm(text, term) {
+  if (THAI.test(term)) return text.includes(term);
+  return new RegExp(`(^|[^a-z0-9'])${escRe(term)}(?=$|[^a-z0-9])`).test(text);
+}
+const countWords = (t) => THAI.test(t) ? Math.max(1, Math.round(t.replace(/\s/g, '').length / 4)) : t.split(/\s+/).filter(Boolean).length;
+const h = (s = '') => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtTime = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+const fmtDuration = (sec) => sec < 60 ? `${sec.toFixed(1)}s` : `${Math.floor(sec / 60)}m ${Math.round(sec % 60)}s`;
+const pad2 = (n) => String(n).padStart(2, '0');
+const truncate = (s, n = 80) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/* ================= 2. EMOTION (names, colors, intensity — never good/bad) ================= */
+const EMOTION_COLORS = { Anger: '#e5384f', Sadness: '#3b82f6', Anxiety: '#8b5cf6', Frustration: '#f5a524', Hurt: '#14b8a6', Calm: '#ddd6fe', Others: '#64748b' };
+const EMOTION_ORDER = ['Anger', 'Sadness', 'Anxiety', 'Frustration', 'Hurt', 'Calm', 'Others'];
+const EMOTION_TH = { Anger: 'โกรธ', Sadness: 'เศร้า', Anxiety: 'กังวล', Frustration: 'หงุดหงิด', Hurt: 'เจ็บปวด', Calm: 'สงบ', Others: 'อื่นๆ' };
+const LEVEL_TH = { High: 'สูง', Moderate: 'ปานกลาง', Low: 'ต่ำ' };
+
+const LEXICON = {
+  Anger: ['angry', 'anger', 'mad', 'furious', 'pissed', 'hate', 'rage', 'โกรธ', 'โมโห', 'แค้น', 'ไม่พอใจ'],
+  Sadness: ['sad', 'cry', 'crying', 'lonely', 'empty', 'hopeless', 'heartbroken', 'เศร้า', 'เสียใจ', 'เหงา', 'ร้องไห้'],
+  Anxiety: ['worried', 'worry', 'anxious', 'nervous', 'scared', 'afraid', 'stress', 'stressed', 'doubt', 'not good enough', 'กังวล', 'กลัว', 'เครียด', 'ไม่มั่นใจ'],
+  Frustration: ['frustrating', 'frustrated', 'stuck', 'fed up', 'tired of', 'keep coming back', 'again and again', 'หงุดหงิด', 'เบื่อ', 'ติดอยู่'],
+  Hurt: ['hurt', 'hurts', 'betrayed', 'let down', 'disappointed', 'ignored', 'เจ็บ', 'น้อยใจ', 'ผิดหวัง'],
+  Calm: ['calm', 'relaxed', 'peaceful', 'at peace', 'let it go', 'okay now', 'สงบ', 'ใจเย็น', 'สบายใจ', 'ปล่อยวาง', 'โล่ง'],
+};
+const INTENSIFIERS = ['very', 'so', 'really', 'extremely', 'totally', "can't stop", 'always', 'never', 'มาก', 'สุดๆ', 'จริงๆ', 'ที่สุด'];
+const levelOf = (s) => (s >= 0.7 ? 'High' : s >= 0.4 ? 'Moderate' : 'Low');
+
+function detectEmotion(raw) {
+  const text = normalize(raw);
+  const ranked = Object.entries(LEXICON)
+    .map(([label, terms]) => [label, terms.filter((t) => containsTerm(text, t)).length])
+    .filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
+  if (!ranked.length) return { label: 'Others', score: 0.3, level: 'Low' };
+  const [label, hits] = ranked[0];
+  const boosts = INTENSIFIERS.filter((w) => containsTerm(text, w)).length;
+  const ex = Math.min((raw.match(/!/g) || []).length, 3);
+  const score = Math.min(1, Math.round((0.45 + 0.1 * (hits - 1) + 0.12 * boosts + 0.05 * ex) * 10) / 10);
+  return { label, score, level: levelOf(score) };
+}
+const color = (l) => EMOTION_COLORS[l] || EMOTION_COLORS.Others;
+/** Same hue, lighter for lower intensity (no good/bad meaning). */
+function tone(em) {
+  const mix = em.level === 'High' ? 0 : em.level === 'Moderate' ? 22 : 45;
+  return mix ? `color-mix(in srgb, ${color(em.label)} ${100 - mix}%, #ffffff)` : color(em.label);
+}
+function shortTh(em) {
+  if (em.label === 'Others') return 'อื่นๆ';
+  const w = EMOTION_TH[em.label];
+  return em.level === 'High' ? `${w}มาก` : em.level === 'Low' ? `${w}เล็กน้อย` : w;
+}
+function longTh(em) {
+  if (em.label === 'Others') return 'ยังไม่พบคำบ่งชี้อารมณ์ชัดเจน';
+  return `ความ${EMOTION_TH[em.label]}ระดับ${LEVEL_TH[em.level]}`;
+}
+
+/* ================= 3. STORY DETECTOR ================= */
+const CONCEPTS = {
+  family: { label: 'Family', terms: ['brother', 'sister', 'sibling', 'mom', 'mother', 'dad', 'father', 'parents', 'family', 'son', 'daughter', 'พี่ชาย', 'น้องชาย', 'พี่สาว', 'น้องสาว', 'แม่', 'พ่อ', 'ครอบครัว'] },
+  work: { label: 'Work', terms: ['work', 'job', 'boss', 'office', 'career', 'deadline', 'interview', 'project', 'colleague', 'meeting', 'งาน', 'เจ้านาย', 'ออฟฟิศ', 'ประชุม', 'สัมภาษณ์'] },
+  future: { label: 'Future', terms: ['future', 'next week', 'next year', 'plan', 'plans', 'someday', 'อนาคต', 'ปีหน้า', 'แผน'] },
+  self: { label: 'Self', terms: ['doubt', 'myself', 'good enough', 'confidence', 'who i am', 'ตัวเอง', 'ไม่ดีพอ', 'ไม่เก่ง'] },
+  relationship: { label: 'Relationship', terms: ['girlfriend', 'boyfriend', 'partner', 'wife', 'husband', 'relationship', 'breakup', 'แฟน', 'คนรัก', 'เลิกกัน'] },
+  friends: { label: 'Friends', terms: ['friend', 'friends', 'เพื่อน'] },
+  health: { label: 'Health', terms: ['health', 'sick', 'sleep', 'body', 'doctor', 'สุขภาพ', 'ป่วย', 'นอนไม่หลับ'] },
+  money: { label: 'Money', terms: ['money', 'debt', 'rent', 'salary', 'bills', 'เงิน', 'หนี้', 'ค่าเช่า', 'เงินเดือน'] },
+};
+const STOP = new Set(("i me my myself we our you your he she it they them a an the and or but so to of in on at for with about what that this " +
+  "is am are was were be been have has had do does did not no just really very can can't don't i'm it's feel feeling think thinking " +
+  "keep still again there here then than when how why who which would could should will maybe like get got going now honestly").split(' '));
+const stem = (w) => (w.length > 4 ? w.replace(/(ing|ed|es|s)$/, '') : w);
+const tokenize = (t) => new Set(t.split(/[^a-z0-9'\u0E00-\u0E7F]+/).filter((w) => w.length > 2 && !STOP.has(w)).map(stem));
+const overlap = (a, b) => { if (!a.size || !b.size) return 0; let n = 0; a.forEach((x) => { if (b.has(x)) n++; }); return n / Math.min(a.size, b.size); };
+
+class StoryDetector {
+  constructor({ threshold = 0.5 } = {}) { this.threshold = threshold; this.stories = []; }
+  get(id) { return this.stories.find((s) => s.id === id); }
+  features(raw) {
+    const text = normalize(raw), concepts = new Set(), terms = [];
+    for (const [k, c] of Object.entries(CONCEPTS)) for (const t of c.terms) if (containsTerm(text, t)) { concepts.add(k); terms.push(t); }
+    return { concepts, terms, tokens: tokenize(text) };
+  }
+  similarity(f, s) {
+    const ts = overlap(f.tokens, s.tokens);
+    if (!f.concepts.size) return f.tokens.size >= 3 ? ts : 0;
+    if (!s.concepts.size) return ts;
+    return 0.75 * overlap(f.concepts, s.concepts) + 0.25 * ts;
+  }
+  assign(text, lastId) {
+    const f = this.features(text);
+    let best = null, bs = 0;
+    for (const s of this.stories) { const sc = this.similarity(f, s); if (sc > bs) { best = s; bs = sc; } }
+    if (best && bs >= this.threshold) return this.absorb(best, f);
+    if (!f.concepts.size && f.tokens.size < 4 && lastId) return this.absorb(this.get(lastId), f);
+    return this.absorb(this.create(), f);
+  }
+  create() {
+    const n = this.stories.length + 1;
+    const s = { id: `s${n}`, code: `#${pad2(n)}`, label: 'Untitled', concepts: new Set(), conceptCounts: {}, termCounts: {}, tokens: new Set(), rounds: [] };
+    this.stories.push(s); return s;
+  }
+  absorb(s, f) {
+    f.concepts.forEach((c) => { s.concepts.add(c); s.conceptCounts[c] = (s.conceptCounts[c] || 0) + 1; });
+    f.terms.forEach((t) => { s.termCounts[t] = (s.termCounts[t] || 0) + 1; });
+    f.tokens.forEach((t) => s.tokens.add(t));
+    s.label = storyLabel(s); return s;
+  }
+}
+function storyLabel(s) {
+  const cs = Object.entries(s.conceptCounts).sort((a, b) => b[1] - a[1]).map(([k]) => CONCEPTS[k].label);
+  if (cs.length >= 2) return `${cs[0]} / ${cs[1]}`;
+  if (cs.length === 1) {
+    const t = Object.entries(s.termCounts).sort((a, b) => b[1] - a[1]).map(([x]) => x).find((x) => x !== cs[0].toLowerCase());
+    return t ? `${cs[0]} / ${cap(t)}` : cs[0];
+  }
+  const w = [...s.tokens].slice(0, 2).map(cap);
+  return w.length ? `Untitled / ${w.join(' ')}` : 'Untitled';
+}
+
+/* ================= 4. SESSION ENGINE (Story -> Emotion -> Round) ================= */
+class SessionEngine {
+  constructor({ threshold = 0.5 } = {}) { this.listeners = new Set(); this.threshold = threshold; this.reset(); }
+  subscribe(fn) { this.listeners.add(fn); }
+  emit() { this.listeners.forEach((fn) => fn(this)); }
+  reset() { this.detector = new StoryDetector({ threshold: this.threshold }); this.segments = []; this.rounds = []; this.lastStoryId = null; this.emit(); }
+  setThreshold(v) { this.threshold = v; this.detector.threshold = v; }
+  get stories() { return this.detector.stories; }
+  story(id) { return this.detector.get(id); }
+
+  addSegment({ text, start, end }) {
+    text = (text || '').trim(); if (!text) return;
+    const prev = this.segments.at(-1);
+    const story = this.detector.assign(text, this.lastStoryId);
+    const emotion = detectEmotion(text);
+    const sameTurn = story.id === this.lastStoryId; // new round ONLY after other content
+    let round;
+    if (sameTurn) {
+      round = story.rounds.at(-1);
+      round.end = end; round.text += ' ' + text; round.quote = text; round.emotion = detectEmotion(round.text);
+    } else {
+      round = { id: `r${this.rounds.length + 1}`, storyId: story.id, number: story.rounds.length + 1, start, end, text, quote: text, emotion };
+      story.rounds.push(round); this.rounds.push(round);
+    }
+    const minutes = Math.max((end - start) / 60000, 1 / 60);
+    this.segments.push({
+      id: `g${this.segments.length + 1}`, text, start, end, storyId: story.id, roundNumber: round.number, newRound: !sameTurn, emotion,
+      wpm: Math.round(countWords(text) / minutes), pauseBefore: prev ? Math.max(0, (start - prev.end) / 1000) : null,
+    });
+    this.lastStoryId = story.id; this.emit();
+  }
+  current() {
+    const seg = this.segments.at(-1); if (!seg) return null;
+    const story = this.story(seg.storyId);
+    return { story, round: story.rounds.at(-1), segment: seg };
+  }
+  spectrum() {
+    const tot = Object.fromEntries(EMOTION_ORDER.map((k) => [k, 0])); let sum = 0;
+    for (const s of this.segments) { const w = Math.max(s.emotion.score, 0.1); tot[s.emotion.label] += w; sum += w; }
+    return Object.fromEntries(EMOTION_ORDER.map((k) => [k, sum ? Math.round((tot[k] / sum) * 100) : 0]));
+  }
+  storiesByRecent() { return [...this.stories].sort((a, b) => b.rounds.at(-1).end - a.rounds.at(-1).end); }
+  toJSON() {
+    const iso = (t) => new Date(t).toISOString();
+    return {
+      exportedAt: new Date().toISOString(),
+      stories: this.stories.map((s) => ({ id: s.code, label: s.label, rounds: s.rounds.map((r) => ({ round: r.number, start: iso(r.start), end: iso(r.end), emotion: r.emotion, text: r.text })) })),
+      segments: this.segments.map((g) => ({ ...g, start: iso(g.start), end: iso(g.end) })),
+    };
+  }
+}
+
+/* ================= 5. DEMO DATA (relative to now — never in the future) ================= */
+const DEMO_SCRIPT = [
+  [40, 'ผมโกรธพี่ชายมากจริงๆ!'],
+  [34, 'งานที่ออฟฟิศช่วงนี้เครียดมาก'],
+  [27, 'พี่ชายไม่เคยฟังผมเลย ผมโกรธ'],
+  [21, 'กังวลเรื่องเงินเดือนกับค่าเช่า'],
+  [14, 'ยังโกรธพี่ชายอยู่ เรื่องนี้วนกลับมาอีกแล้ว'],
+  [8, 'พรุ่งนี้มีประชุมงานอีก'],
+  [3, 'ยังรู้สึกโกรธพี่ชายอยู่บ้าง'],
+  [1, 'ผมกำลังคิดถึงเรื่องที่เกิดขึ้นกับพี่ชายอีกครั้ง'],
+];
+function loadDemo(engine) {
+  const now = Date.now();
+  for (const [m, text] of DEMO_SCRIPT) { const start = now - m * 60000; engine.addSegment({ text, start, end: start + countWords(text) * 420 }); }
+}
+
+/* ================= 6. SPEECH-TO-TEXT (timestamps per segment) ================= */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+class SpeechInput {
+  constructor({ lang, onSegment, onInterim, onError }) { Object.assign(this, { lang, onSegment, onInterim, onError }); this.listening = false; this.segStart = null; }
+  static get supported() { return Boolean(SR); }
+  start() {
+    if (!SR || this.listening) return;
+    const rec = new SR(); rec.lang = this.lang; rec.continuous = true; rec.interimResults = true;
+    rec.onresult = (e) => {
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i];
+        if (this.segStart === null) this.segStart = Date.now();
+        if (r.isFinal) {
+          const t = r[0].transcript.trim();
+          if (t) this.onSegment({ text: t, start: this.segStart, end: Date.now() });
+          this.segStart = null; this.onInterim('');
+        } else this.onInterim(r[0].transcript);
+      }
+    };
+    rec.onerror = (e) => { if (!['no-speech', 'aborted'].includes(e.error)) this.onError(`Speech recognition: ${e.error}`); };
+    rec.onend = () => { if (this.listening) { try { rec.start(); } catch (_) {} } };
+    this.rec = rec; this.listening = true; rec.start();
+  }
+  stop() { this.listening = false; this.rec?.stop(); this.rec = null; this.segStart = null; }
+  setLang(l) { this.lang = l; if (this.listening) { this.stop(); this.start(); } }
+}
+
+/* ================= 7. PAUSE SOUND MONITOR (waveform + speaking/pause only) =================
+   Descriptive only: shows loudness and silence. No normal/abnormal classification. */
+class SoundMonitor {
+  constructor(n = 200) {
+    this.n = n; this.active = false; this.level = 0; this.lastVoice = 0; this.lastPush = 0;
+    this.levels = Array.from({ length: n }, (_, i) =>
+      Math.min(1, (Math.abs(Math.sin(i * 0.37) * Math.sin(i * 0.053 + 1)) * 0.7 + 0.06) * (0.6 + 0.4 * Math.abs(Math.sin(i * 1.7)))));
+  }
+  async start() {
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error('Microphone needs https:// or localhost');
+    this.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+    const AC = window.AudioContext || window.webkitAudioContext;
+    this.ctx = new AC();
+    this.an = this.ctx.createAnalyser(); this.an.fftSize = 1024;
+    this.ctx.createMediaStreamSource(this.stream).connect(this.an);
+    this.buf = new Float32Array(this.an.fftSize);
+    this.active = true; this.lastVoice = performance.now();
+    this.loop();
+  }
+  stop() {
+    this.active = false; cancelAnimationFrame(this.raf);
+    this.stream?.getTracks().forEach((t) => t.stop()); this.ctx?.close();
+    this.stream = this.ctx = null; this.level = 0; drawMonitor();
+  }
+  loop = () => {
+    if (!this.active) return;
+    this.an.getFloatTimeDomainData(this.buf);
+    let s = 0; for (const v of this.buf) s += v * v;
+    const rms = Math.sqrt(s / this.buf.length);
+    const amp = Math.min(1, Math.sqrt(rms) * 2.2);
+    const now = performance.now();
+    if (rms > 0.02) this.lastVoice = now;
+    this.level = this.level * 0.8 + amp * 0.2;
+    if (now - this.lastPush > 50) { this.levels.push(amp); this.levels.shift(); this.lastPush = now; }
+    drawMonitor();
+    this.raf = requestAnimationFrame(this.loop);
+  };
+}
+
+function drawMonitor() {
+  const cv = document.getElementById('wave'); if (!cv) return;
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, hh = cv.clientHeight;
+  if (!w) return;
+  if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(hh * dpr); }
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, hh);
+  const L = monitor.levels, n = L.length, step = w / n, mid = hh / 2;
+  const grad = g.createLinearGradient(0, 0, w, 0);
+  grad.addColorStop(0, '#c084fc'); grad.addColorStop(0.45, '#6366f1'); grad.addColorStop(1, '#3b82f6');
+  g.globalAlpha = monitor.active ? 1 : 0.55; g.strokeStyle = grad; g.lineWidth = Math.max(1, step * 0.55);
+  g.shadowColor = 'rgba(99,102,241,.6)'; g.shadowBlur = 6;
+  g.beginPath();
+  for (let i = 0; i < n; i++) { const x = i * step + step / 2, a = Math.max(1, L[i] * (mid - 6)); g.moveTo(x, mid - a); g.lineTo(x, mid + a); }
+  g.stroke();
+  const mx = w - 6; g.globalAlpha = 1; g.shadowColor = '#93c5fd'; g.shadowBlur = 12;
+  g.strokeStyle = 'rgba(191,219,254,.85)'; g.lineWidth = 1.5;
+  g.beginPath(); g.moveTo(mx, 0); g.lineTo(mx, hh); g.stroke();
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(mx, mid, 5, 0, Math.PI * 2); g.fill();
+
+  const tip = document.getElementById('mon-status'), dot = document.getElementById('meter-dot');
+  if (tip) {
+    if (!monitor.active) { tip.textContent = 'Mic off (ไมค์ปิด)'; tip.className = 'mon-tip'; }
+    else {
+      const since = (performance.now() - monitor.lastVoice) / 1000;
+      const speaking = since < 0.35;
+      tip.textContent = speaking ? 'Speaking (กำลังพูด)' : `Pause (หยุด) ${since.toFixed(1)}s`;
+      tip.className = 'mon-tip' + (speaking ? ' speaking' : '');
+    }
+  }
+  if (dot) dot.style.left = `${Math.min(100, monitor.level * 100)}%`;
+}
+
+/* ================= 8. VIEWS ================= */
+const NO_DATA = 'ยังไม่มีข้อมูล — กดไมค์แล้วพูด, พิมพ์ทดสอบ, หรือโหลด demo ใน Settings';
+const empty = (m = NO_DATA) => `<div class="empty">${m}</div>`;
+const tag = (em) => `<span class="tag" style="--c:${color(em.label)}">${em.label}</span>`;
+const I = {
+  doc: '<svg class="i" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/></svg>',
+  round: '<svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg>',
+  smile: '<svg class="i" viewBox="0 0 24 24" style="color:#f472a0"><circle cx="12" cy="12" r="9"/><path d="M8.5 14a4 4 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/></svg>',
+  wave: '<svg class="i" viewBox="0 0 24 24"><path d="M2 12h3l2-6 3 12 3-9 2 5 2-2h5"/></svg>',
+  clock: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  mic: '<svg class="i" viewBox="0 0 24 24" style="width:26px;height:26px"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+  brain: '<svg class="i" viewBox="0 0 24 24"><path d="M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 3 3 2 2 0 0 0 3-1V5a2 2 0 0 0-3-1z"/><path d="M15 4a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-3 3 2 2 0 0 1-3-1V5a2 2 0 0 1 3-1z"/><path d="M8 9h1.5M8 14h1.5M14.5 9H16M14.5 14H16"/></svg>',
+};
+const pattern = (s) => (s.rounds.length === 1 ? 'Mentioned once' : `Repeated ${s.rounds.length} rounds`);
+const durationMin = (s) => Math.max(1, Math.round((s.rounds.at(-1).end - s.rounds[0].start) / 60000));
+const roundsChip = (n) => `${n} round${n > 1 ? 's' : ''}`;
+function emotionPath(s) {
+  return `<div class="path">${s.rounds.map((r, i) => `${i ? '<span class="muted">→</span>' : ''}<span class="step" style="--c:${color(r.emotion.label)}"><i class="dot"></i>${r.emotion.label}</span>`).join('')}</div>`;
+}
+
+/* Spectrum: current emotion  ->  Calm. Position = intensity only. */
+function spectrumData(e) {
+  const cur = e.current(); if (!cur) return null;
+  const em = cur.round.emotion;
+  const lastActive = [...e.segments].reverse().map((s) => s.emotion).find((x) => x.label !== 'Calm' && x.label !== 'Others');
+  const left = em.label !== 'Calm' && em.label !== 'Others' ? em.label : (lastActive?.label || 'Anger');
+  const pos = em.label === 'Calm' ? 0.94 : em.label === 'Others' ? 0.6 : Math.max(0.04, (1 - em.score) * 0.75);
+  return { left, pos };
+}
+function spectrumCard(e) {
+  const d = spectrumData(e);
+  if (!d) return `<section class="card"><div class="label">${I.wave}Emotion Spectrum</div>${empty()}</section>`;
+  const lc = color(d.left);
+  return `<section class="card">
+    <div class="label spec-title">${I.wave}<span>Emotion Spectrum</span><small>(${d.left} → Calm)</small></div>
+    <div class="spec-track" style="background:linear-gradient(90deg, ${lc}, color-mix(in srgb, ${lc} 45%, #ece8fb), #ece8fb)">
+      <span class="spec-thumb" style="left:${(d.pos * 100).toFixed(1)}%"></span>
+    </div>
+    <div class="spec-ends">
+      <span style="--l:color-mix(in srgb, ${lc} 60%, #fff)">${d.left}<small>(${EMOTION_TH[d.left]})</small></span>
+      <span style="--l:#e6e1f7">Calm<small>(สงบ)</small></span>
+    </div>
+  </section>`;
+}
+
+function emotionHistoryCard(e) {
+  const cur = e.current();
+  const rounds = cur ? cur.story.rounds.slice(-6) : [];
+  const items = rounds.map((r, i) => `${i ? '<span class="eh-arrow">›</span>' : ''}
+    <div class="eh-item ${r.id === cur.round.id ? 'cur' : ''}" style="--c:${tone(r.emotion)}">
+      <div class="eh-dot"></div><div>Round ${r.number}</div>
+      <div class="muted">${r.emotion.label}<br>(${shortTh(r.emotion)})</div>
+    </div>`).join('');
+  return `<section class="card">
+    <div class="label">${I.clock}Emotion History</div>
+    ${rounds.length ? `<div class="eh">${items}</div>` : empty()}
+  </section>`;
+}
+
+function monitorPanel(ui) {
+  return `<section class="panel">
+    <div class="mon-head">${I.wave}<div><h3>Pause Sound Monitor</h3><p>แสดงช่วงพูดและช่วงหยุดของเสียง (ไม่มีการตัดสินปกติ / ผิดปกติ)</p></div></div>
+    <div class="mon-body">
+      <button class="mic-btn ${ui.listening ? 'on' : ''}" data-action="toggle-mic" aria-label="Toggle microphone" title="${ui.listening ? 'ปิดไมค์' : 'เปิดไมค์'}">${I.mic}</button>
+      <div class="wave-wrap"><canvas id="wave"></canvas><div id="mon-status" class="mon-tip">Mic off (ไมค์ปิด)</div></div>
+    </div>
+    <div class="meter"><span id="meter-dot" class="meter-dot" style="left:0%"></span></div>
+    <div class="meter-labels"><span>Quiet (เงียบ)</span><span>Loud (ดัง)</span></div>
+    <p id="interim" class="interim">${ui.supported ? '' : 'Browser นี้ไม่รองรับการแปลงเสียงเป็นข้อความ (ใช้ Chrome / Edge)'}</p>
+  </section>`;
+}
+
+function testCard() {
+  return `<section class="card">
+    <div class="card-head"><h3>Test input</h3><p>พิมพ์ประโยคแทนการพูด เพื่อทดสอบโดยไม่ใช้ไมค์</p></div>
+    <form class="test-input" id="test-form">
+      <input type="text" id="test-text" placeholder="เช่น ผมยังโกรธพี่ชายอยู่เลย" autocomplete="off"/>
+      <button class="btn" type="submit">Add</button>
+    </form>
+  </section>`;
+}
+
+function homeView(e, ui) {
+  const cur = e.current();
+  const top = cur ? `
+    <div class="top3">
+      <section class="card sr">
+        <div>
+          <div class="label">${I.doc}Story</div>
+          <div class="quote-box">“${h(truncate(cur.round.quote, 120))}”</div>
+          <div class="story-meta">Story ${cur.story.code} · ${h(cur.story.label)}</div>
+        </div>
+        <div>
+          <div class="label">${I.round}Round</div>
+          <div class="round-num">${cur.round.number}</div>
+          <div class="muted">(Current)</div>
+        </div>
+      </section>
+      <section class="card" style="--c:${tone(cur.round.emotion)}">
+        <div class="label">${I.smile}Emotion</div>
+        <div class="emo-main">${cur.round.emotion.label}<span class="dash">—</span>${cur.round.emotion.level}</div>
+        <div class="emo-sub">(${longTh(cur.round.emotion)})</div>
+      </section>
+    </div>` : `<section class="card" style="margin-bottom:12px">${empty()}</section>`;
+
+  return `
+    <section class="panel">
+      <div class="isr-head"><div class="isr-icon">${I.brain}</div>
+        <div><h2>Inner Speech Receptor</h2><p>See your thinking pattern, not judge it.</p></div></div>
+      ${top}
+      <div style="display:flex;flex-direction:column;gap:12px">${spectrumCard(e)}${emotionHistoryCard(e)}</div>
+    </section>
+    ${monitorPanel(ui)}
+    ${ui.showTest ? testCard() : ''}`;
+}
+
+/* Charts */
+function barChart(items, fmt) {
+  if (!items.length) return empty();
+  const W = 800, H = 240, P = 34, max = Math.max(...items.map((i) => i.value), 1), bw = (W - P * 2) / items.length;
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}"><line class="axis" x1="${P}" y1="${H - P}" x2="${W - P}" y2="${H - P}"/>${items.map((it, i) => {
+    const bh = (it.value / max) * (H - P * 2), x = P + i * bw + bw * 0.15, y = H - P - bh, cx = x + bw * 0.35;
+    return `<g><rect x="${x}" y="${y}" width="${bw * 0.7}" height="${bh}" rx="4" fill="${it.color}"><title>${h(it.title)}</title></rect>
+      <text x="${cx}" y="${y - 6}" text-anchor="middle" class="val">${fmt(it.value)}</text>
+      <text x="${cx}" y="${H - P + 18}" text-anchor="middle">${h(it.label)}</text></g>`;
+  }).join('')}</svg>`;
+}
+function trendChart(segs) {
+  if (segs.length < 2) return empty('ต้องมีอย่างน้อย 2 ช่วงพูดจึงจะแสดงแนวโน้มได้');
+  const W = 800, H = 260, P = 70, t0 = segs[0].start, span = segs.at(-1).start - t0 || 1;
+  const x = (s) => P + ((s.start - t0) / span) * (W - P - 20), y = (v) => H - 34 - v * (H - 68);
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}">
+    ${[0.4, 0.7].map((v) => `<line class="grid" x1="${P}" x2="${W - 20}" y1="${y(v)}" y2="${y(v)}"/>`).join('')}
+    ${[['High', 0.85], ['Moderate', 0.55], ['Low', 0.2]].map(([t, v]) => `<text x="6" y="${y(v) + 4}">${t}</text>`).join('')}
+    <polyline points="${segs.map((s) => `${x(s).toFixed(1)},${y(s.emotion.score).toFixed(1)}`).join(' ')}" fill="none" stroke="#3a4a6b" stroke-width="2"/>
+    ${segs.map((s) => `<circle cx="${x(s)}" cy="${y(s.emotion.score)}" r="6" fill="${color(s.emotion.label)}"><title>${fmtTime(s.start)} · ${s.emotion.label} ${s.emotion.score.toFixed(1)}</title></circle>`).join('')}
+    <text x="${P}" y="${H - 8}">${fmtTime(segs[0].start)}</text><text x="${W - 20}" y="${H - 8}" text-anchor="end">${fmtTime(segs.at(-1).start)}</text></svg>`;
+}
+const legend = () => `<div class="legend">${EMOTION_ORDER.map((k) => `<span><i class="dot" style="--c:${color(k)}"></i>${k} (${EMOTION_TH[k]})</span>`).join('')}</div>`;
+const stat = (v, k) => `<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`;
+
+function spectrumView(e) {
+  const spec = e.spectrum();
+  return `<section><h2 class="title">Emotion Spectrum</h2><p class="subtitle">ตำแหน่งและแนวโน้มของอารมณ์ — แสดงเป็นชื่อ สี และความเข้มเท่านั้น</p></section>
+    ${spectrumCard(e)}
+    <section class="card"><div class="card-head"><h3>Session landscape</h3><p>สัดส่วนอารมณ์ในเซสชันนี้</p></div>
+      ${e.segments.length ? EMOTION_ORDER.map((k) => `<div class="sbar"><span>${k}</span><div class="track"><div class="fill" style="width:${spec[k]}%;background:${color(k)}"></div></div><span class="pct">${spec[k]}%</span></div>`).join('') : empty()}
+    </section>
+    <section class="card"><div class="card-head"><h3>Trend</h3><p>ความเข้มของแต่ละช่วงพูดตามเวลา</p></div>${trendChart(e.segments)}${legend()}</section>
+    <p class="note">ไม่มีอารมณ์ใดถูกจัดว่าดีกว่าหรือแย่กว่ากัน</p>`;
+}
+
+function storyView(e) {
+  const st = e.storiesByRecent();
+  return `<section><h2 class="title">Stories</h2><p class="subtitle">เรื่องที่ถูกจัดกลุ่มตามความหมาย แม้จะใช้คำต่างกัน</p></section>
+    ${st.length ? st.map((s) => `<section class="card">
+      <div class="row-top"><span class="muted">Story ${s.code}</span><span class="chip">${roundsChip(s.rounds.length)}</span></div>
+      <h3 style="margin-top:6px">${h(s.label)}</h3>${emotionPath(s)}
+      <div class="meta"><span>Duration: ${durationMin(s)} minutes</span><span>Pattern: ${pattern(s)}</span></div>
+      <table><tr><th>Time</th><th>Round</th><th>What was said</th><th>Emotion</th><th class="num">Score</th></tr>
+      ${s.rounds.map((r) => `<tr><td class="muted">${fmtTime(r.start)}</td><td>Round ${r.number}</td><td>“${h(truncate(r.text, 90))}”</td><td>${tag(r.emotion)}</td><td class="num">${r.emotion.score.toFixed(1)}</td></tr>`).join('')}</table>
+    </section>`).join('') : `<section class="card">${empty()}</section>`}`;
+}
+
+function roundView(e) {
+  const rs = [...e.rounds].sort((a, b) => b.start - a.start);
+  return `<section><h2 class="title">Rounds</h2><p class="subtitle">Round จะเพิ่มเมื่อเรื่องเดิมวนกลับมา <b>หลังจากพูดเรื่องอื่นคั่น</b> เท่านั้น — พูดซ้ำในเทิร์นเดียวกันไม่นับเพิ่ม</p></section>
+    <section class="card">${rs.length ? `<table><tr><th>Time</th><th>Story</th><th>Round</th><th>Latest quote</th><th>Emotion</th><th class="num">Score</th></tr>
+      ${rs.map((r) => { const s = e.story(r.storyId); return `<tr><td class="muted">${fmtTime(r.start)}</td><td class="muted">${s.code} · ${h(s.label)}</td><td>Round ${r.number}</td><td>“${h(truncate(r.quote, 60))}”</td><td>${tag(r.emotion)}</td><td class="num">${r.emotion.score.toFixed(1)}</td></tr>`; }).join('')}
+    </table>` : empty()}</section>`;
+}
+
+function voiceView(e) {
+  const segs = e.segments, ps = segs.filter((s) => s.pauseBefore !== null);
+  const avg = segs.length ? Math.round(segs.reduce((a, s) => a + s.wpm, 0) / segs.length) : 0;
+  const pav = ps.length ? ps.reduce((a, s) => a + s.pauseBefore, 0) / ps.length : 0;
+  return `<section><h2 class="title">Voice Graph</h2><p class="subtitle">จังหวะการพูดและช่วงหยุด — เป็นตัวเลขเชิงบรรยายเท่านั้น</p></section>
+    <section class="card stats">${stat(segs.length, 'Segments')}${stat(avg, 'Average pace (wpm)')}${stat(fmtDuration(pav), 'Average pause')}</section>
+    <section class="card"><div class="card-head"><h3>Pace over time</h3><p>สีแท่งตามอารมณ์ของช่วงพูดนั้น</p></div>
+      ${barChart(segs.map((s) => ({ value: s.wpm, label: fmtTime(s.start), color: color(s.emotion.label), title: s.text })), (v) => v)}${legend()}</section>
+    <section class="card"><div class="card-head"><h3>Pauses</h3><p>ช่วงเงียบก่อนแต่ละช่วงพูด (สีฟ้า = ก่อนเปลี่ยนเรื่อง)</p></div>
+      ${barChart(ps.map((s) => ({ value: s.pauseBefore, label: fmtTime(s.start), color: s.newRound ? '#4f8cff' : '#334155', title: s.text })), fmtDuration)}</section>
+    <p class="note">ไม่มีการจัดเสียงเป็นปกติ/ผิดปกติ และไม่ใช่การวินิจฉัยใดๆ</p>`;
+}
+
+function historyView(e, ui) {
+  const segs = [...e.segments].reverse().filter((s) => ui.filter === 'all' || s.storyId === ui.filter);
+  const opts = [`<option value="all">All stories</option>`, ...e.stories.map((s) => `<option value="${s.id}" ${ui.filter === s.id ? 'selected' : ''}>Story ${s.code} · ${h(s.label)}</option>`)].join('');
+  return `<section><h2 class="title">History</h2><p class="subtitle">ทุกช่วงพูดในเซสชันนี้</p></section>
+    <section class="card"><div class="toolbar"><select id="story-filter">${opts}</select><button class="btn ghost" data-action="export">Export JSON</button></div>
+      ${segs.length ? `<table><tr><th>Time</th><th>Story / Round</th><th>Text</th><th>Emotion</th><th class="num">Score</th></tr>
+      ${segs.map((s) => `<tr><td class="muted">${fmtTime(s.start)}</td><td class="muted">${e.story(s.storyId).code}<span class="sep">|</span>Round ${s.roundNumber}</td><td>${h(s.text)}</td><td>${tag(s.emotion)}</td><td class="num">${s.emotion.score.toFixed(1)}</td></tr>`).join('')}</table>` : empty()}
+    </section>`;
+}
+
+function settingsView(_e, ui) {
+  const langs = [['th-TH', 'ภาษาไทย (Thai)'], ['en-US', 'English (US)']];
+  return `<section><h2 class="title">Settings</h2></section>
+    <section class="card form">
+      <label>Your name<input type="text" id="set-name" value="${h(ui.name)}"/></label>
+      <label>Speech language<select id="set-lang">${langs.map(([v, l]) => `<option value="${v}" ${ui.lang === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <label>Story grouping strictness: <span id="thr-val">${ui.threshold}</span>
+        <input type="range" id="set-threshold" min="0.3" max="0.8" step="0.05" value="${ui.threshold}"/>
+        <small>ต่ำ = รวมเรื่องหลวมขึ้น, สูง = เข้มงวดขึ้น (มีผลกับประโยคใหม่)</small></label>
+      <label class="check"><input type="checkbox" id="set-demo" ${ui.demo ? 'checked' : ''}/> Load demo data on start</label>
+      <label class="check"><input type="checkbox" id="set-test" ${ui.showTest ? 'checked' : ''}/> Show test input on Home</label>
+    </section>
+    <section class="card actions">
+      <button class="btn" data-action="load-demo">Load demo data</button>
+      <button class="btn ghost" data-action="export">Export session (JSON)</button>
+      <button class="btn subtle" data-action="reset">Clear session</button>
+    </section>
+    <p class="note">การวิเคราะห์ทั้งหมดทำในเบราว์เซอร์ แต่ระบบแปลงเสียงเป็นข้อความของ Chrome/Edge อาจส่งเสียงไปประมวลผลที่เซิร์ฟเวอร์ของผู้ให้บริการเบราว์เซอร์</p>`;
+}
+
+/* ================= 9. APP ================= */
+const STORAGE_KEY = 'pec-isr.settings';
+const DEFAULTS = { name: 'Joe', lang: 'th-TH', threshold: 0.5, demo: true, showTest: true };
+const loadSettings = () => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch (_) { return {}; } };
+const saveSettings = () => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch (_) {} };
+
+const settings = { ...DEFAULTS, ...loadSettings() };
+const ui = { listening: false, filter: 'all', supported: SpeechInput.supported };
+const engine = new SessionEngine({ threshold: settings.threshold });
+const monitor = new SoundMonitor();
+const speech = new SpeechInput({
+  lang: settings.lang,
+  onSegment: (seg) => engine.addSegment(seg),
+  onInterim: (t) => { const el = document.getElementById('interim'); if (el) el.textContent = t; },
+  onError: (m) => toast(m),
+});
+
+const ROUTES = { home: homeView, spectrum: spectrumView, story: storyView, round: roundView, voice: voiceView, history: historyView, settings: settingsView };
+const currentRoute = () => { const r = location.hash.replace(/^#\/?/, ''); return ROUTES[r] ? r : 'home'; };
+
+function render() {
+  const route = currentRoute();
+  document.getElementById('view').innerHTML = ROUTES[route](engine, { ...settings, ...ui });
+  document.querySelectorAll('#nav a').forEach((a) => a.classList.toggle('active', a.dataset.route === route));
+  document.getElementById('avatar').textContent = (settings.name || 'J').charAt(0).toUpperCase();
+  drawMonitor();
+}
+
+async function toggleMic() {
+  if (ui.listening) { speech.stop(); monitor.stop(); ui.listening = false; render(); return; }
+  try { await monitor.start(); }
+  catch (err) {
+    toast(err.name === 'NotAllowedError' ? 'ไมค์ไม่ได้รับอนุญาต — กดอนุญาตที่แถบที่อยู่ของเบราว์เซอร์' : `เปิดไมค์ไม่ได้: ${err.message}`);
+    return;
+  }
+  ui.listening = true;
+  if (SpeechInput.supported) speech.start();
+  else toast('Browser นี้แปลงเสียงเป็นข้อความไม่ได้ (ใช้ Chrome/Edge) แต่ยังแสดงคลื่นเสียงได้');
+  render();
+}
+
+document.addEventListener('click', (ev) => {
+  const el = ev.target.closest('[data-action]'); if (!el) return;
+  const a = el.dataset.action;
+  if (a === 'toggle-mic') toggleMic();
+  if (a === 'load-demo') { engine.reset(); loadDemo(engine); toast('Demo data loaded.'); }
+  if (a === 'reset' && confirm('ล้างข้อมูลทั้งหมดในเซสชันนี้?')) { engine.reset(); toast('Session cleared.'); }
+  if (a === 'export') exportJSON();
+});
+
+document.addEventListener('submit', (ev) => {
+  if (ev.target.id !== 'test-form') return;
+  ev.preventDefault();
+  const text = document.getElementById('test-text').value.trim(); if (!text) return;
+  const end = Date.now();
+  engine.addSegment({ text, start: end - Math.max(1500, countWords(text) * 400), end });
+  document.getElementById('test-text')?.focus();
+});
+
+document.addEventListener('change', (ev) => {
+  const { id, value, checked } = ev.target; if (!id) return;
+  if (id === 'story-filter') { ui.filter = value; render(); return; }
+  if (id === 'set-name') settings.name = value.trim() || DEFAULTS.name;
+  if (id === 'set-lang') { settings.lang = value; speech.setLang(value); }
+  if (id === 'set-threshold') { settings.threshold = Number(value); engine.setThreshold(settings.threshold); }
+  if (id === 'set-demo') settings.demo = checked;
+  if (id === 'set-test') settings.showTest = checked;
+  if (id.startsWith('set-')) { saveSettings(); render(); toast('Settings saved.'); }
+});
+document.addEventListener('input', (ev) => { if (ev.target.id === 'set-threshold') document.getElementById('thr-val').textContent = ev.target.value; });
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(engine.toJSON(), null, 2)], { type: 'application/json' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `inner-speech-${new Date().toISOString().slice(0, 10)}.json` });
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast'); el.textContent = msg; el.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 3000);
+}
+
+function tick() {
+  const d = new Date(), off = -d.getTimezoneOffset() / 60;
+  const gmt = `GMT${off >= 0 ? '+' : ''}${Number.isInteger(off) ? off : off.toFixed(1)}`;
+  document.getElementById('clock-date').textContent = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  document.getElementById('clock-time').textContent = `${fmtTime(d)} (${gmt})`;
+}
+function updateOnline() {
+  const on = navigator.onLine;
+  document.getElementById('online').classList.toggle('off', !on);
+  document.getElementById('online-text').textContent = on ? 'Online' : 'Offline';
+}
+
+/* Boot */
+if (settings.demo) loadDemo(engine);
+engine.subscribe(render);
+window.addEventListener('hashchange', render);
+window.addEventListener('resize', drawMonitor);
+window.addEventListener('online', updateOnline);
+window.addEventListener('offline', updateOnline);
+render(); tick(); updateOnline();
+setInterval(tick, 15000);
+</script>
+</body>
+</html>
